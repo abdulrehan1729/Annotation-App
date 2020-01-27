@@ -1,8 +1,9 @@
-import React from "react";
+import React, { Fragment } from "react";
 import "./App.css";
-import { Layer, Stage } from "react-konva";
-
+import { Layer, Stage, Transformer } from "react-konva";
 import Annotate from "./components/Annotate.js";
+import Transform from "./components/Transform";
+import { urlencoded } from "body-parser";
 
 export default class App extends React.Component {
   constructor(props) {
@@ -13,7 +14,10 @@ export default class App extends React.Component {
       isDrawingMode: true, // allow shapes to be drawn
       isPolygon: false, //draw polyline
       isRect: true, // draw rect by default
-      shapeCount: 0
+      shapeCount: 0,
+      selectedShapeName: "",
+      imgHeight: 0,
+      imgWidth: 0
     };
   }
 
@@ -88,6 +92,11 @@ export default class App extends React.Component {
       }
     });
   };
+  handleShapeClick = e => {
+    this.setState({
+      selectedShapeName: e.target.name()
+    });
+  };
   handleCheckboxChange = () => {
     // toggle drawing mode
     this.setState({
@@ -105,10 +114,31 @@ export default class App extends React.Component {
 
   handleJsonSubmit = () => {
     console.log(JSON.stringify(this.state.shapes));
+    console.log(this.state);
   };
 
-  handleStageClick = e => {};
+  onImgLoad = ({ target: img }) => {
+    this.setState({
+      imgWidth: img.offsetWidth,
+      imgHeight: img.offsetHeight
+    });
+  };
   render() {
+    const src = "https://homepages.cae.wisc.edu/~ece533/images/frymire.png";
+    let img = new Image();
+    img.src = src;
+    img.onload = () => {
+      this.setState({
+        imgHeight: img.height,
+        imgWidth: img.width
+      });
+    };
+
+    const divStyle = {
+      width: this.state.imgWidth,
+      height: this.state.imgHeight,
+      backgroundImage: `url(${src})`
+    };
     return (
       <div className="App">
         <input
@@ -124,21 +154,16 @@ export default class App extends React.Component {
         <label>Rect</label>
         <input type="submit" onClick={this.handleJsonSubmit} />
 
-        <div className="img-container">
+        <div className="img-container" style={divStyle}>
           <Stage
-            width={1080}
-            height={720}
+            width={this.state.imgWidth}
+            height={this.state.imgHeight}
             onContentClick={this.handleClick}
-            onClick={this.handleStageClick}
+            onClick={this.handleShapeClick}
             onContentMouseMove={this.handleMouseMove}
             visible={true}
           >
             <Layer ref="layer">
-              {/* 
-              render the shapes array - each element in 'shapes' renders a ColoredRect component 
-              with that element's dimensions. Any time these dimensions change (in the handle 
-              functions), the ColoredRect rerenders to reflect those changes.
-            */}
               {this.state.shapes.map(shape => {
                 return (
                   <Annotate
@@ -149,10 +174,10 @@ export default class App extends React.Component {
                     height={shape.height}
                     isDrawingMode={this.state.isDrawingMode}
                     handleStateChange={this.handleStateChange}
-                    // pass isDrawingMode so we know when we can click on a shape
                   />
                 );
               })}
+              <Transform selectedShapeName={this.state.selectedShapeName} />
             </Layer>
           </Stage>
         </div>

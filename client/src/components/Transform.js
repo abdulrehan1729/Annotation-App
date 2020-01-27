@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Konva from "konva";
-import { Transformer } from "react-konva";
+import { Stage, Layer, Rect, Transformer } from "react-konva";
 class Transform extends Component {
   componentDidMount() {
     this.checkNode();
@@ -10,7 +10,8 @@ class Transform extends Component {
   }
   checkNode() {
     const stage = this.transformer.getStage();
-    const { selectedShapeName } = this.props.shapes;
+    const { selectedShapeName } = this.props;
+    // console.log(selectedShapeName);
     const selectedNode = stage.findOne("." + selectedShapeName);
     if (selectedNode === this.transformer.node()) {
       return;

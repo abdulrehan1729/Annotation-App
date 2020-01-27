@@ -30,9 +30,7 @@
 }
 
 .img-container {
-  background-image: url("./img.jpg");
-  width: 1080px;
-  height: 720px;
+  background-image: url("");
 }
 
 @keyframes App-logo-spin {

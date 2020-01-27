@@ -12,6 +12,8 @@
     "react-image-annotate": "^0.1.34",
     "react-image-annotation": "^0.9.10",
     "react-konva": "^16.12.0-0",
+    "react-native": "^0.61.5",
+    "react-native-exif": "^0.4.0",
     "react-picture-annotation": "^1.0.3",
     "react-scripts": "3.3.0",
     "react-storybook": "^1.0.0"
