@@ -1,9 +1,9 @@
-import React, { Fragment } from "react";
+import React from "react";
 import "./App.css";
-import { Layer, Stage, Transformer } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import Annotate from "./components/Annotate.js";
 import Transform from "./components/Transform";
-import { urlencoded } from "body-parser";
+// import { urlencoded } from "body-parser";
 
 export default class App extends React.Component {
   constructor(props) {
@@ -13,20 +13,33 @@ export default class App extends React.Component {
       isDrawing: false, // in the process of drawing a shape
       isDrawingMode: true, // allow shapes to be drawn
       isPolygon: false, //draw polyline
+      endPolygon: false,
       isRect: true, // draw rect by default
       shapeCount: 0,
       selectedShapeName: "",
       imgHeight: 0,
-      imgWidth: 0
+      imgWidth: 0,
+      points: [],
+      src: "https://homepages.cae.wisc.edu/~ece533/images/watch.png"
     };
+  }
+
+  componentDidMount() {
+    this.imgLoad();
   }
 
   handleClick = e => {
     if (!this.state.isDrawingMode) {
       return;
     }
+
     // if we are drawing a shape, a click finishes the drawing
     if (this.state.isDrawing) {
+      if (this.state.isPolygon && !this.state.endPolygon) {
+        this.state.points.push(e.evt.layerX);
+        this.state.points.push(e.evt.layerY);
+        // console.log(this.state.points);
+      }
       this.setState({
         isDrawing: !this.state.isDrawing
       });
@@ -41,6 +54,7 @@ export default class App extends React.Component {
     });
     let shapeName = "shape_" + this.state.shapeCount;
     newShapes.push({
+      points: this.state.points,
       x: e.evt.layerX,
       y: e.evt.layerY,
       name: shapeName,
@@ -52,7 +66,7 @@ export default class App extends React.Component {
       isDrawing: true,
       shapes: newShapes
     });
-    // console.log(this.state.shapes);
+    console.log(this.state.shapes);
   };
 
   handleMouseMove = e => {
@@ -73,6 +87,7 @@ export default class App extends React.Component {
       newShapesList[currShapeIndex] = {
         x: currShape.x, // keep starting position the same
         y: currShape.y,
+        points: currShape.points,
         width: newWidth, // new width and height
         height: newHeight,
         name: currShape.name
@@ -92,52 +107,57 @@ export default class App extends React.Component {
       }
     });
   };
+
   handleShapeClick = e => {
     this.setState({
       selectedShapeName: e.target.name()
     });
   };
+
   handleCheckboxChange = () => {
     // toggle drawing mode
     this.setState({
       isDrawingMode: !this.state.isDrawingMode
     });
   };
+
   handleShapeCheckboxChange = () => {
     if (this.state.isDrawingMode) {
       this.setState({
         isPolygon: !this.state.isPolygon,
-        isRect: !this.state.isRect
+        isDrawing: !this.state.isDrawing
       });
     }
   };
 
   handleJsonSubmit = () => {
     console.log(JSON.stringify(this.state.shapes));
-    console.log(this.state);
   };
 
-  onImgLoad = ({ target: img }) => {
-    this.setState({
-      imgWidth: img.offsetWidth,
-      imgHeight: img.offsetHeight
-    });
+  handleEnter = e => {
+    if (e.key === "Enter") {
+      this.setState({
+        endPolygon: !this.state.endPolygon
+      });
+    }
   };
-  render() {
-    const src = "https://homepages.cae.wisc.edu/~ece533/images/frymire.png";
+
+  imgLoad = () => {
     let img = new Image();
-    img.src = src;
+    img.src = this.state.src;
     img.onload = () => {
       this.setState({
         imgHeight: img.height,
         imgWidth: img.width
       });
     };
+  };
 
+  render() {
     const divStyle = {
       width: this.state.imgWidth,
       height: this.state.imgHeight,
-      backgroundImage: `url(${src})`
+      backgroundImage: `url(${this.state.src})`
     };
     return (
       <div className="App">
@@ -150,8 +170,7 @@ export default class App extends React.Component {
 
         <input type="checkbox" onChange={this.handleShapeCheckboxChange} />
         <label>Polygon</label>
-        <input type="checkbox" onChange={this.handleShapeCheckboxChange} />
-        <label>Rect</label>
+
         <input type="submit" onClick={this.handleJsonSubmit} />
 
         <div className="img-container" style={divStyle}>
@@ -162,6 +181,7 @@ export default class App extends React.Component {
             onClick={this.handleShapeClick}
             onContentMouseMove={this.handleMouseMove}
             visible={true}
+            onKeyPress={this.handleEnter}
           >
             <Layer ref="layer">
               {this.state.shapes.map(shape => {
@@ -173,7 +193,9 @@ export default class App extends React.Component {
                     width={shape.width}
                     height={shape.height}
                     isDrawingMode={this.state.isDrawingMode}
+                    isPolygon={this.state.isPolygon}
                     handleStateChange={this.handleStateChange}
+                    points={shape.points}
                   />
                 );
               })}

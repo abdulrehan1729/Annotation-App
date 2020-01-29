@@ -1,6 +1,5 @@
 import React, { Component } from "react";
-import Konva from "konva";
-import { Stage, Layer, Rect, Transformer } from "react-konva";
+import { Transformer } from "react-konva";
 class Transform extends Component {
   componentDidMount() {
     this.checkNode();
