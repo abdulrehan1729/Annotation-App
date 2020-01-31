@@ -1,8 +1,11 @@
 import React from "react";
 import "./App.css";
-import { Layer, Stage } from "react-konva";
-import Annotate from "./components/Annotate.js";
+import { Layer, Stage, Group } from "react-konva";
+import Rect from "./components/RectBox.js";
+import Polyline from "./components/Polyline";
 import Transform from "./components/Transform";
+// import keydown, { Keys } from "react-keydown";
+
 // import { urlencoded } from "body-parser";
 
 export default class App extends React.Component {
@@ -38,35 +41,47 @@ export default class App extends React.Component {
       if (this.state.isPolygon && !this.state.endPolygon) {
         this.state.points.push(e.evt.layerX);
         this.state.points.push(e.evt.layerY);
-        // console.log(this.state.points);
       }
-      this.setState({
-        isDrawing: !this.state.isDrawing
-      });
-      return;
+      if (!this.state.isPolygon) {
+        this.setState({
+          isDrawing: !this.state.isDrawing
+        });
+        return;
+      }
     }
 
     // otherwise, add a new rectangle at the mouse position with 0 width and height,
     // and set isDrawing to true
     const newShapes = this.state.shapes.slice();
-    this.setState({
-      shapeCount: this.state.shapeCount + 1
-    });
+    if (!this.state.isPolygon) {
+      this.setState({
+        shapeCount: this.state.shapeCount + 1
+      });
+    }
     let shapeName = "shape_" + this.state.shapeCount;
-    newShapes.push({
-      points: this.state.points,
-      x: e.evt.layerX,
-      y: e.evt.layerY,
-      name: shapeName,
-      width: 0,
-      height: 0
-    });
+    if (this.state.endPolygon) {
+      newShapes.push({
+        points: this.state.points,
+        name: shapeName
+      });
+      this.setState({
+        points: []
+      });
+    }
+    if (!this.state.isPolygon /*&& !this.state.endPolygon*/) {
+      newShapes.push({
+        x: e.evt.layerX,
+        y: e.evt.layerY,
+        name: shapeName,
+        width: 0,
+        height: 0
+      });
+    }
 
     this.setState({
       isDrawing: true,
       shapes: newShapes
     });
-    console.log(this.state.shapes);
   };
 
   handleMouseMove = e => {
@@ -76,7 +91,7 @@ export default class App extends React.Component {
     const mouseY = e.evt.layerY;
 
     // update the current rectangle's width and height based on the mouse position
-    if (this.state.isDrawing) {
+    if (this.state.isDrawing && this.state.shapes.length > 0) {
       // get the current shape (the last shape in this.state.shapes)
       const currShapeIndex = this.state.shapes.length - 1;
       const currShape = this.state.shapes[currShapeIndex];
@@ -84,15 +99,21 @@ export default class App extends React.Component {
       const newHeight = mouseY - currShape.y;
 
       const newShapesList = this.state.shapes.slice();
-      newShapesList[currShapeIndex] = {
-        x: currShape.x, // keep starting position the same
-        y: currShape.y,
-        points: currShape.points,
-        width: newWidth, // new width and height
-        height: newHeight,
-        name: currShape.name
-      };
-
+      if (!this.state.isPolygon) {
+        newShapesList[currShapeIndex] = {
+          x: currShape.x, // keep starting position the same
+          y: currShape.y,
+          // points: this.state.points,
+          width: newWidth, // new width and height
+          height: newHeight,
+          name: currShape.name
+        };
+      } else {
+        newShapesList[currShapeIndex] = {
+          name: currShape.name,
+          points: this.state.point
+        };
+      }
       this.setState({
         shapes: newShapesList
       });
@@ -135,11 +156,15 @@ export default class App extends React.Component {
   };
 
   handleEnter = e => {
-    if (e.key === "Enter") {
-      this.setState({
-        endPolygon: !this.state.endPolygon
-      });
-    }
+    if (this.state.isPolygon)
+      if (e.key === "Enter") {
+        console.log("enter is pressed");
+        this.setState({
+          endPolygon: !this.state.endPolygon,
+          shapeCount: this.state.shapeCount + 1
+        });
+        return;
+      }
   };
 
   imgLoad = () => {
@@ -160,7 +185,7 @@ export default class App extends React.Component {
       backgroundImage: `url(${this.state.src})`
     };
     return (
-      <div className="App">
+      <div className="App" tabIndex="0" onKeyPress={this.handleEnter}>
         <input
           type="checkbox"
           checked={this.state.isDrawingMode}
@@ -181,22 +206,34 @@ export default class App extends React.Component {
             onClick={this.handleShapeClick}
             onContentMouseMove={this.handleMouseMove}
             visible={true}
-            onKeyPress={this.handleEnter}
           >
             <Layer ref="layer">
-              {this.state.shapes.map(shape => {
+              {this.state.shapes.map((shape, i) => {
                 return (
-                  <Annotate
-                    x={shape.x}
-                    y={shape.y}
-                    name={shape.name}
-                    width={shape.width}
-                    height={shape.height}
-                    isDrawingMode={this.state.isDrawingMode}
-                    isPolygon={this.state.isPolygon}
-                    handleStateChange={this.handleStateChange}
-                    points={shape.points}
-                  />
+                  <Group key={i}>
+                    {!this.state.isPolygon ? (
+                      <Rect
+                        key={i}
+                        x={shape.x}
+                        y={shape.y}
+                        name={shape.name}
+                        width={shape.width}
+                        height={shape.height}
+                        isDrawingMode={this.state.isDrawingMode}
+                        isPolygon={this.state.isPolygon}
+                        handleStateChange={this.handleStateChange}
+                        points={shape.points}
+                      />
+                    ) : (
+                      <Polyline
+                        key={i}
+                        name={shape.name}
+                        isDrawingMode={this.state.isDrawingMode}
+                        handleStateChange={this.handleStateChange}
+                        points={shape.points}
+                      />
+                    )}
+                  </Group>
                 );
               })}
               <Transform selectedShapeName={this.state.selectedShapeName} />

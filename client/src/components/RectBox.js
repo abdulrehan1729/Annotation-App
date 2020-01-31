@@ -2,7 +2,7 @@ import Konva from "konva";
 import { Rect, Group, Line } from "react-konva";
 import React, { Component } from "react";
 
-export default class Annotate extends Component {
+export default class RectBox extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -35,27 +35,17 @@ export default class Annotate extends Component {
   render() {
     return (
       <Group>
-        {this.props.isPolygon ? (
-          <Line
-            points={this.props.points}
-            stroke={this.state.color}
-            strokeWidth={this.state.strokeWidth}
-            closed={false}
-          />
-        ) : (
-          <Rect
-            name={this.props.name}
-            x={this.props.x}
-            y={this.props.y}
-            width={this.props.width}
-            height={this.props.height}
-            stroke={this.state.color}
-            strokeWidth={this.state.strokeWidth}
-            onClick={this.handleClick}
-            draggable={true}
-            onDragEnd={this.handleDragEnd}
-          />
-        )}
+        <Rect
+          name={this.props.name}
+          x={this.props.x}
+          y={this.props.y}
+          width={this.props.width}
+          height={this.props.height}
+          stroke={this.state.color}
+          strokeWidth={this.state.strokeWidth}
+          draggable={true}
+          onDragEnd={this.handleDragEnd}
+        />
       </Group>
     );
   }
